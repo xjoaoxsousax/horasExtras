@@ -4,29 +4,14 @@
   <meta charset="UTF-8">
   <title>Controle de Horas Extras</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial; padding: 20px; margin: 0; }
+    body { font-family: Arial; padding: 20px; }
     table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; font-size: 14px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f4f4f4; }
     input[type="time"], input[type="date"] { width: 100%; }
-    button { padding: 6px 10px; font-size: 13px; margin: 2px; cursor: pointer; }
+    button { padding: 6px 10px; font-size: 14px; margin: 2px; cursor: pointer; }
     .btn-apagar { background-color: #dc3545; color: #fff; border: none; border-radius: 3px; }
-    @media(max-width: 600px){
-      table, thead, tbody, th, td, tr { display: block; }
-      tr { margin-bottom: 10px; border-bottom: 2px solid #ddd; }
-      th { display: none; }
-      td { text-align: right; padding-left: 50%; position: relative; }
-      td::before { 
-        content: attr(data-label); 
-        position: absolute; 
-        left: 10px; 
-        font-weight: bold;
-        text-align: left;
-      }
-      td button { width: 98%; margin: 2px 1%; }
-    }
   </style>
 </head>
 <body>
@@ -60,17 +45,17 @@
       const tabela = document.querySelector("#tabela tbody");
       const linha = document.createElement("tr");
       linha.innerHTML = `
-        <td data-label="Data"><input type="date" onchange="calcular(this)"></td>
-        <td data-label="Entrada"><input type="time" onchange="calcular(this)"></td>
-        <td data-label="Saída Intervalo"><input type="time" onchange="calcular(this)"></td>
-        <td data-label="Retorno Intervalo"><input type="time" onchange="calcular(this)"></td>
-        <td data-label="Saída"><input type="time" onchange="calcular(this)"></td>
-        <td data-label="Total Horas" class="total"></td>
-        <td data-label="Extras 50%" class="extra50"></td>
-        <td data-label="Extras 75%" class="extra75"></td>
-        <td data-label="Extras 100%" class="extra100"></td>
-        <td data-label="Valor Extra (€)" class="valor"></td>
-        <td data-label="Ações">
+        <td><input type="date" onchange="calcular(this)"></td>
+        <td><input type="time" onchange="calcular(this)"></td>
+        <td><input type="time" onchange="calcular(this)"></td>
+        <td><input type="time" onchange="calcular(this)"></td>
+        <td><input type="time" onchange="calcular(this)"></td>
+        <td class="total"></td>
+        <td class="extra50"></td>
+        <td class="extra75"></td>
+        <td class="extra100"></td>
+        <td class="valor"></td>
+        <td>
           <button class="btn-apagar" onclick="apagarLinha(this)">❌ Apagar</button>
         </td>
       `;
@@ -102,7 +87,7 @@
 
       function diffHoras(horaInicio, horaFim) {
         let diff = (horaFim - horaInicio)/3600000;
-        if(diff<0) diff+=24;
+        if(diff<0) diff+=24; // considera meia-noite
         return diff;
       }
 
