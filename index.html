@@ -78,52 +78,55 @@
       ordenarTabela();
     }
 
-    function calcular(el) {
-      const row = el.parentElement.parentElement;
-      const inputs = row.querySelectorAll("input");
-      const [data, entrada, saidaInt, retorno, saida] = inputs;
+function calcular(el) {
+  const row = el.parentElement.parentElement;
+  const inputs = row.querySelectorAll("input");
+  const [data, entrada, saidaInt, retorno, saida] = inputs;
 
-      if (!entrada.value || !saidaInt.value || !retorno.value || !saida.value || !data.value) return;
+  if (!entrada.value || !saidaInt.value || !retorno.value || !saida.value || !data.value) return;
 
-      function diffHoras(horaInicio, horaFim) {
-        let diff = (horaFim - horaInicio)/3600000;
-        if(diff<0) diff+=24; // considera meia-noite
-        return diff;
-      }
+  function diffHoras(horaInicio, horaFim) {
+    let diff = (horaFim - horaInicio)/3600000;
+    if(diff<0) diff+=24; // considera meia-noite
+    return diff;
+  }
 
-      const hEntrada = new Date(`1970-01-01T${entrada.value}`);
-      const hSaidaInt = new Date(`1970-01-01T${saidaInt.value}`);
-      const hRetorno = new Date(`1970-01-01T${retorno.value}`);
-      const hSaida = new Date(`1970-01-01T${saida.value}`);
+  const hEntrada = new Date(`1970-01-01T${entrada.value}`);
+  const hSaidaInt = new Date(`1970-01-01T${saidaInt.value}`);
+  const hRetorno = new Date(`1970-01-01T${retorno.value}`);
+  const hSaida = new Date(`1970-01-01T${saida.value}`);
 
-      const trabalhoManha = diffHoras(hEntrada, hSaidaInt);
-      const trabalhoTarde = diffHoras(hRetorno, hSaida);
-      const totalHoras = trabalhoManha + trabalhoTarde;
+  const trabalhoManha = diffHoras(hEntrada, hSaidaInt);
+  const trabalhoTarde = diffHoras(hRetorno, hSaida);
+  const totalHoras = trabalhoManha + trabalhoTarde;
 
-      const diaSemana = new Date(data.value).getDay();
-      let extra50=0, extra75=0, extra100=0;
+  const diaSemana = new Date(data.value).getDay();
+  let extra50=0, extra75=0, extra100=0;
 
-      if(diaSemana===0 || diaSemana===6){
-        extra100 = totalHoras;
-      } else {
-        if(totalHoras>8){
-          const horasExtras = totalHoras-8;
-          extra50 = horasExtras>=1?1:horasExtras;
-          extra75 = horasExtras>1?horasExtras-1:0;
-        }
-      }
+  const horasNormais = 8;
+  const horasExtras = totalHoras > horasNormais ? totalHoras - horasNormais : 0;
 
-      const valor = (extra50*9.62)+(extra75*11.22)+(extra100*12.82);
-
-      row.querySelector(".total").textContent = totalHoras.toFixed(2);
-      row.querySelector(".extra50").textContent = extra50.toFixed(2);
-      row.querySelector(".extra75").textContent = extra75.toFixed(2);
-      row.querySelector(".extra100").textContent = extra100.toFixed(2);
-      row.querySelector(".valor").textContent = valor.toFixed(2);
-
-      salvarLocalStorage();
-      ordenarTabela();
+  if(diaSemana===0 || diaSemana===6){ // sábado/domingo
+    extra100 = horasExtras;
+  } else { // dias de semana
+    if(horasExtras > 0){
+      extra50 = horasExtras >= 1 ? 1 : horasExtras;
+      extra75 = horasExtras > 1 ? horasExtras - 1 : 0;
     }
+  }
+
+  const valor = (extra50*9.62)+(extra75*11.22)+(extra100*12.82);
+
+  row.querySelector(".total").textContent = totalHoras.toFixed(2);
+  row.querySelector(".extra50").textContent = extra50.toFixed(2);
+  row.querySelector(".extra75").textContent = extra75.toFixed(2);
+  row.querySelector(".extra100").textContent = extra100.toFixed(2);
+  row.querySelector(".valor").textContent = valor.toFixed(2);
+
+  salvarLocalStorage();
+  ordenarTabela();
+}
+
 
     function salvarLocalStorage() {
       const linhas = document.querySelectorAll("#tabela tbody tr");
@@ -200,3 +203,4 @@
   </script>
 </body>
 </html>
+
