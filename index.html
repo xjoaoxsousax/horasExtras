@@ -4,13 +4,29 @@
   <meta charset="UTF-8">
   <title>Controle de Horas Extras</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial; padding: 20px; }
+    body { font-family: Arial; padding: 20px; margin: 0; }
     table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; font-size: 14px; }
     th { background-color: #f4f4f4; }
     input[type="time"], input[type="date"] { width: 100%; }
-    button { padding: 8px 12px; font-size: 14px; margin-right: 10px; }
+    button { padding: 6px 10px; font-size: 13px; margin: 2px; cursor: pointer; }
+    .btn-apagar { background-color: #dc3545; color: #fff; border: none; border-radius: 3px; }
+    @media(max-width: 600px){
+      table, thead, tbody, th, td, tr { display: block; }
+      tr { margin-bottom: 10px; border-bottom: 2px solid #ddd; }
+      th { display: none; }
+      td { text-align: right; padding-left: 50%; position: relative; }
+      td::before { 
+        content: attr(data-label); 
+        position: absolute; 
+        left: 10px; 
+        font-weight: bold;
+        text-align: left;
+      }
+      td button { width: 98%; margin: 2px 1%; }
+    }
   </style>
 </head>
 <body>
@@ -29,10 +45,10 @@
         <th>Extras 75%</th>
         <th>Extras 100%</th>
         <th>Valor Extra (€)</th>
+        <th>Ações</th>
       </tr>
     </thead>
     <tbody>
-      <!-- Linhas serão adicionadas aqui -->
     </tbody>
   </table>
 
@@ -40,39 +56,43 @@
   <button onclick="salvarComoExcel()">📊 Salvar como Excel</button>
 
   <script>
-    // Adiciona linha nova
     function adicionarLinha(dados=null) {
       const tabela = document.querySelector("#tabela tbody");
       const linha = document.createElement("tr");
       linha.innerHTML = `
-        <td><input type="date" onchange="calcular(this)"></td>
-        <td><input type="time" onchange="calcular(this)"></td>
-        <td><input type="time" onchange="calcular(this)"></td>
-        <td><input type="time" onchange="calcular(this)"></td>
-        <td><input type="time" onchange="calcular(this)"></td>
-        <td class="total"></td>
-        <td class="extra50"></td>
-        <td class="extra75"></td>
-        <td class="extra100"></td>
-        <td class="valor"></td>
+        <td data-label="Data"><input type="date" onchange="calcular(this)"></td>
+        <td data-label="Entrada"><input type="time" onchange="calcular(this)"></td>
+        <td data-label="Saída Intervalo"><input type="time" onchange="calcular(this)"></td>
+        <td data-label="Retorno Intervalo"><input type="time" onchange="calcular(this)"></td>
+        <td data-label="Saída"><input type="time" onchange="calcular(this)"></td>
+        <td data-label="Total Horas" class="total"></td>
+        <td data-label="Extras 50%" class="extra50"></td>
+        <td data-label="Extras 75%" class="extra75"></td>
+        <td data-label="Extras 100%" class="extra100"></td>
+        <td data-label="Valor Extra (€)" class="valor"></td>
+        <td data-label="Ações">
+          <button class="btn-apagar" onclick="apagarLinha(this)">❌ Apagar</button>
+        </td>
       `;
       tabela.appendChild(linha);
 
       if (dados) {
         linha.querySelector("input[type='date']").value = dados.data;
-        linha.querySelectorAll("input[type='time']")[0].value = dados.entrada;
-        linha.querySelectorAll("input[type='time']")[1].value = dados.saidaInt;
-        linha.querySelectorAll("input[type='time']")[2].value = dados.retorno;
-        linha.querySelectorAll("input[type='time']")[3].value = dados.saida;
+        const inputs = linha.querySelectorAll("input[type='time']");
+        inputs[0].value = dados.entrada;
+        inputs[1].value = dados.saidaInt;
+        inputs[2].value = dados.retorno;
+        inputs[3].value = dados.saida;
         linha.querySelector(".total").textContent = dados.total;
         linha.querySelector(".extra50").textContent = dados.extra50;
         linha.querySelector(".extra75").textContent = dados.extra75;
         linha.querySelector(".extra100").textContent = dados.extra100;
         linha.querySelector(".valor").textContent = dados.valor;
       }
+
+      ordenarTabela();
     }
 
-    // Calcula horas e extras
     function calcular(el) {
       const row = el.parentElement.parentElement;
       const inputs = row.querySelectorAll("input");
@@ -81,8 +101,8 @@
       if (!entrada.value || !saidaInt.value || !retorno.value || !saida.value || !data.value) return;
 
       function diffHoras(horaInicio, horaFim) {
-        let diff = (horaFim - horaInicio) / 3600000;
-        if (diff < 0) diff += 24; // corrige passagem da meia-noite
+        let diff = (horaFim - horaInicio)/3600000;
+        if(diff<0) diff+=24;
         return diff;
       }
 
@@ -96,19 +116,19 @@
       const totalHoras = trabalhoManha + trabalhoTarde;
 
       const diaSemana = new Date(data.value).getDay();
-      let extra50 = 0, extra75 = 0, extra100 = 0;
+      let extra50=0, extra75=0, extra100=0;
 
-      if (diaSemana === 0 || diaSemana === 6) {
-        extra100 = totalHoras; // todas horas de fim de semana
+      if(diaSemana===0 || diaSemana===6){
+        extra100 = totalHoras;
       } else {
-        if (totalHoras > 8) {
-          const horasExtras = totalHoras - 8;
-          extra50 = horasExtras >= 1 ? 1 : horasExtras;
-          extra75 = horasExtras > 1 ? horasExtras - 1 : 0;
+        if(totalHoras>8){
+          const horasExtras = totalHoras-8;
+          extra50 = horasExtras>=1?1:horasExtras;
+          extra75 = horasExtras>1?horasExtras-1:0;
         }
       }
 
-      const valor = (extra50 * 9.62) + (extra75 * 11.22) + (extra100 * 12.82);
+      const valor = (extra50*9.62)+(extra75*11.22)+(extra100*12.82);
 
       row.querySelector(".total").textContent = totalHoras.toFixed(2);
       row.querySelector(".extra50").textContent = extra50.toFixed(2);
@@ -117,49 +137,43 @@
       row.querySelector(".valor").textContent = valor.toFixed(2);
 
       salvarLocalStorage();
+      ordenarTabela();
     }
 
-    // Salva todas as linhas no localStorage
     function salvarLocalStorage() {
       const linhas = document.querySelectorAll("#tabela tbody tr");
       const dados = [];
-
-      linhas.forEach(linha => {
-        const data = linha.querySelector("input[type='date']").value || "";
-        const entradas = linha.querySelectorAll("input[type='time']");
-        const entrada = entradas[0].value || "";
-        const saidaInt = entradas[1].value || "";
-        const retorno = entradas[2].value || "";
-        const saida = entradas[3].value || "";
-        const total = linha.querySelector(".total").textContent || "";
-        const extra50 = linha.querySelector(".extra50").textContent || "";
-        const extra75 = linha.querySelector(".extra75").textContent || "";
-        const extra100 = linha.querySelector(".extra100").textContent || "";
-        const valor = linha.querySelector(".valor").textContent || "";
-
+      linhas.forEach(linha=>{
+        const data = linha.querySelector("input[type='date']").value||"";
+        const inputs = linha.querySelectorAll("input[type='time']");
+        const entrada = inputs[0].value||"";
+        const saidaInt = inputs[1].value||"";
+        const retorno = inputs[2].value||"";
+        const saida = inputs[3].value||"";
+        const total = linha.querySelector(".total").textContent||"";
+        const extra50 = linha.querySelector(".extra50").textContent||"";
+        const extra75 = linha.querySelector(".extra75").textContent||"";
+        const extra100 = linha.querySelector(".extra100").textContent||"";
+        const valor = linha.querySelector(".valor").textContent||"";
         dados.push({data, entrada, saidaInt, retorno, saida, total, extra50, extra75, extra100, valor});
       });
-
       localStorage.setItem("controleHorasExtras", JSON.stringify(dados));
     }
 
-    // Carrega dados do localStorage
     function carregarLocalStorage() {
-      const dados = JSON.parse(localStorage.getItem("controleHorasExtras") || "[]");
-      if (dados.length === 0) {
-        adicionarLinha(); // adiciona uma linha vazia se estiver vazio
-      } else {
-        dados.forEach(linha => adicionarLinha(linha));
+      const dados = JSON.parse(localStorage.getItem("controleHorasExtras")||"[]");
+      if(dados.length===0){
+        adicionarLinha();
+      }else{
+        dados.forEach(linha=>adicionarLinha(linha));
       }
     }
 
-    // Exporta para Excel
-    function salvarComoExcel() {
+    function salvarComoExcel(){
       const linhas = document.querySelectorAll("#tabela tbody tr");
-      const dados = [["Data", "Total Horas", "Extras 50%", "Extras 75%", "Extras 100%", "Valor Extra (€)"]];
-      let totalGeral = 0;
-
-      linhas.forEach(linha => {
+      const dados=[["Data","Total Horas","Extras 50%","Extras 75%","Extras 100%","Valor Extra (€)"]];
+      let totalGeral=0;
+      linhas.forEach(linha=>{
         const data = linha.querySelector("input[type='date']").value || "-";
         const total = linha.querySelector(".total").textContent || "0.00";
         const e50 = linha.querySelector(".extra50").textContent || "0.00";
@@ -170,13 +184,31 @@
         dados.push([data, total, e50, e75, e100, valor]);
         totalGeral += parseFloat(valor);
       });
-
       dados.push(["", "", "", "", "TOTAL GERAL", totalGeral.toFixed(2)]);
 
       const ws = XLSX.utils.aoa_to_sheet(dados);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Horas Extras");
       XLSX.writeFile(wb, "controle_horas_extras.xlsx");
+    }
+
+    function apagarLinha(botao) {
+      if(confirm("Tem certeza que deseja apagar esta linha?")) {
+        const row = botao.parentElement.parentElement;
+        row.remove();
+        salvarLocalStorage();
+      }
+    }
+
+    function ordenarTabela() {
+      const tabela = document.querySelector("#tabela tbody");
+      const linhas = Array.from(tabela.querySelectorAll("tr"));
+      linhas.sort((a,b)=>{
+        const dataA = a.querySelector("input[type='date']").value;
+        const dataB = b.querySelector("input[type='date']").value;
+        return new Date(dataA) - new Date(dataB);
+      });
+      linhas.forEach(linha => tabela.appendChild(linha));
     }
 
     window.onload = carregarLocalStorage;
